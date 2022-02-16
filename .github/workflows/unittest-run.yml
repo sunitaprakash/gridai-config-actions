@@ -3,7 +3,7 @@ name: "test Actions"
 on:
   workflow_dispatch:
     inputs:
-      run_name:
+      run1_name:
         required: false
         default: testfeb16
         type: string
