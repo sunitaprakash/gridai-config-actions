@@ -14,6 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          #export run1_name=${{ inputs.run1_name }} >> $GITHUB_ENV
+          export run1_name=${{ inputs.run1_name }} >> $GITHUB_ENV
           echo "run1_name=${run1_name}"
           
