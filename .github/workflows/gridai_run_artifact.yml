@@ -1,0 +1,88 @@
+name: "Grid.ai Run Artifact"
+on:
+  workflow_call:
+    inputs:
+      script-name:
+        required: true
+        default: "run.py"
+        type: string   
+      repository:
+        required: false
+        default: ""
+        type: string     
+      grid-url:
+        required: false
+        default: ""
+        type: string    
+      grid-args:
+        required: false
+        default: "--localdir --instance_type t2.medium --dependency_file requirements.txt"
+        type: string    
+      script-args:
+        required: false
+        default: ""
+        type: string           
+    secrets:
+      gridai-username:
+        required: true
+      gridai-key:
+        required: true
+jobs:
+  unittests:
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        os: [ubuntu-latest]
+        g-use_spot:        [""] #, "--use_spot"]   
+        g-localdir:        ["--localdir"] #, ""]   
+        g-dependency_file: ["--dependency_file requirements.txt", ""]
+        g-instance_type:   ["--instance_type t2.medium"] #, "--instance_type g4dn.xlarge"]   
+        g-strategy:        [ "--strategy grid_search"] # , "--strategy random_search"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          repository: ${{ inputs.repository }}
+      - uses: gridai-actions/gridai-login@v0
+        with:
+          gridai-username: ${{ secrets.gridai-username }} 
+          gridai-key: ${{ secrets.gridai-key }}
+      - run: |
+          export GRID_ARGS="${{ inputs.grid-args }} ${{ matrix.g-use_spot }} ${{ matrix.g-localdir }} ${{ matrix.g-dependency_file }}"
+          export SCRIPT_ARGS="${{ inputs.script-args }}"
+          if [ "${{ matrix.g-instance_type }}" = "--instance_type g4dn.xlarge" ]; then
+            GRID_ARGS="--gpus 1 ${GRID_ARGS}"
+            SCRIPT_ARGS="--gpus 1 ${SCRIPT_ARGS}"
+          fi
+          if [ "${{ matrix.g-strategy }}" = "--strategy random_search" ]; then
+            GRID_ARGS="--trials 1 ${GRID_ARGS}"
+          fi
+          echo "GRID_ARGS=${GRID_ARGS}" >> $GITHUB_ENV
+          echo "SCRIPT_ARGS=${SCRIPT_ARGS}" >> $GITHUB_ENV
+      - run: |
+          grid run ${GRID_ARGS} ${{ inputs.script-name }} ${SCRIPT_ARGS} | tee grid.run.log
+      - run: |
+          export run_name=$(cat grid.run.log | awk -F: '$1=/grid_name/ {print $2}' | tr -s '[:blank:]')
+          echo "run_name=${run_name}" >> $GITHUB_ENV           
+          if [[ -z "${run_name}" ]]; then
+            echo "Error: 'grid_name:[run_name]' not found in output"
+            exit 1
+          fi        
+      - id: grid-status
+        uses: gridai-actions/gridai-status@v0
+        with:
+          obj-type: run
+          obj-id: ${run_name}
+      - run: |
+          if [ "${{ steps.grid-status.outputs.obj-status }}" != "succeeded" ]; then
+            exit 1
+          fi             
+      - run: |
+          grid artifacts ${{ env.run_name }}
+          if [[ $? != 0 ]]; then
+            echo "Error: ${run_name} artifacts not found"
+            exit 1
+          fi
+          ls grid_artifacts/*
