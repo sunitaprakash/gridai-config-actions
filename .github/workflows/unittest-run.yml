@@ -15,5 +15,5 @@ jobs:
     steps:
       - run: |
           #export run1_name=${{ inputs.run1_name }} >> $GITHUB_ENV
-          echo "run1_name=${env.run1_name}"
+          echo "run1_name=${run1_name}"
           
