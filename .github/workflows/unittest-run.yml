@@ -5,7 +5,7 @@ on:
     inputs:
       run1_name:
         required: false
-        default: testfeb16
+        default: "c$(date '+%y%m%d-%H%M%S')"
         type: string
 
      
