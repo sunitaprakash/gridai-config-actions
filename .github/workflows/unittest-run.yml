@@ -15,5 +15,5 @@ jobs:
     steps:
       - run: |
           echo The username is ${{ inputs.run1_name }}
-          echo The username2 is ${{ github.event.inputs.run1_name }}"
+          echo The username2 is ${{ github.event.inputs.run1_name }}
         shell: bash
