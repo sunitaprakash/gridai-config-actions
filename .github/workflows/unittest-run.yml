@@ -7,12 +7,13 @@ on:
         required: false
         default: testfeb16
         type: string
+
      
 jobs:
   gridai-actions:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          export run1_name=${{ inputs.run1_name }}
-          echo "run1_name=${inputs.run1_name}"
+          #export run1_name=${{ inputs.run1_name }} >> $GITHUB_ENV
+          echo "run1_name=${env.run1_name}"
           
