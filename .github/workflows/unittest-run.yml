@@ -1,7 +1,7 @@
 name: "test Actions"
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       run1_name:
         required: false
@@ -15,6 +15,4 @@ jobs:
     steps:
       - run: |
           echo The username is ${{ inputs.run1_name }}
-          export run1_name=${{inputs.run1_name}} >> $GITHUB_ENV
-          echo "run1_name=${run1_name}"
-          
+        shell: bash
